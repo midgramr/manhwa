@@ -1,0 +1,7 @@
+[project]
+name = "manhwa"
+version = "0.1.0"
+description = "Browser extension for translating raw manhwas to English"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
