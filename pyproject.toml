@@ -1,9 +1,9 @@
 [project]
 name = "manhwa"
 version = "0.1.0"
-description = "Browser extension for translating raw manhwas to English"
+description = "A browser extension for translating raw manhwa"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "paddleocr>=3.4.0",
+    "easyocr>=1.7.2",
 ]

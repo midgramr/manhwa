@@ -11,20 +11,14 @@ Install:
 
 Steps:
 
-1. Clone this repo
+1. Clone this repo and `cd` into it
 
     ```bash
     gh repo clone midgramr/manhwa
+    cd manhwa
     ```
 
-2. `cd` into the repo directory
-3. Pull the base image from Docker Hub:
-
-    ```bash
-    docker pull astral/uv:python3.12-trixie
-    ```
-
-4. Run Docker with a bind mount:
+2. Run Docker with a bind mount on the current directory:
 
     ```bash
     docker run -it --rm -v .:/app -v /app/.venv astral/uv:python3.12-trixie bash
