@@ -47,7 +47,7 @@ def replace_text(data, translated_text, bounding_box, orientation="None", font_f
 
     font_size = 100
     size = None
-    while (size is None or size[0] > bounding_box.height or size[1] > bounding_box.width and font_size > 0:
+    while (size is None or size[0] > bounding_box.height or size[1] > bounding_box.width and font_size > 0):
         font = ImageFont.truetype("Tests/fonts/FreeMono.ttf", font_size)
         size = draw.multiline_textbbox(position, translated_text, font)
         font_size -= 1
