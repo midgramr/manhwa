@@ -21,14 +21,5 @@ Steps:
 2. Run Docker with a bind mount on the current directory:
 
     ```bash
-<<<<<<< HEAD
-    docker pull astral/uv:python3.12-trixie
-    ```
-
-4. Run Docker with a bind mount:
-
-    ```bash
-=======
->>>>>>> 341436387994201b38aa259317231cc8eccb318b
     docker run -it --rm -v .:/app -v /app/.venv astral/uv:python3.12-trixie bash
     ```

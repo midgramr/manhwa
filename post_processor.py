@@ -1,22 +1,52 @@
 from PIL import Image, ImageFont, ImageDraw, ImageColor
 import numpy as np
+from enum import Enum
 
 class TextType(Enum):
-    SPEECHBUBBLE = auto()
-    FREETEXT = auto()
+    SPEECHBUBBLE = 1
+    FREETEXT = 2
 
-def post(path_name, metadata, type=TextType.SPEECHBUBBLE, modified_name='modified.png'):
-    img = Image.open(path_name).convert('RGBA')
-    data = np.array(img)
+class BoundingBox:
+    def __init__(self, lowX, highX, lowY, highY):
+        self.lowX = lowX
+        self.highX = highX
+        self.lowY = lowY
+        self.highY = highY
+        self.width = highX - lowX
+        self.height = highY - lowY
 
-    erase_text(data, metadata['bounding_box'], type, metadata['background_color'])
-    replace_text(data, metadata['bounding_box'], metadata['orientation'], metadata['translated_text'])
+def generate_bounds(points):
+    points = np.array(points)
+    if points.shape != (4, 2):
+        raise ValueError("Input must be a (4, 2) array of points")
+
+    x_coords = points[:, 0]
+    y_coords = points[:, 1]
+
+    lowX = np.min(x_coords)
+    highX = np.max(x_coords)
+    lowY = np.min(y_coords)
+    highY = np.max(y_coords)
+
+    return BoundingBox(lowX, highX, lowY, highY)
+     
+
+def post(path_name, metadata, type=TextType.SPEECHBUBBLE, modified_name='modified.jpg'):
+    img = Image.open(path_name).convert("RGB")
+
+    for idx in range(0, len(metadata)):
+        bounding_box = generate_bounds(metadata[idx][0])
+        text = metadata[idx][1]
+
+        data = np.array(img)
+        erase_text(data, bounding_box, type)
+        img = Image.fromarray(data) # convert back to img for drawing new text
+        replace_text(img, text, bounding_box)
             
-    new_img = Image.fromarray(data)
-    new_img.save(modified_name)
+    img.save(modified_name)
     return modified_name
 
-def get_text_color(text_color, variance=5):
+def get_text_color(text_color, variance=50):
         low_text_col = np.copy(text_color)
         low_text_col[:3] -= variance
         low_text_col = np.clip(low_text_col, a_min=0, a_max=None)
@@ -27,32 +57,67 @@ def get_text_color(text_color, variance=5):
 
         return (low_text_col, high_text_col)
 
-def erase_text(data, bounding_box, type, text_color=[0,0,0,255], background_color=[255,255,255,255]):
+def erase_text(data, bounding_box, type, text_color=[0,0,0], background_color=[255,255,255]):
         low_text_col, high_text_col = get_text_color(text_color)
+
         match type:
             case TextType.FREETEXT:
                 #here do concave hull stuff
                 print("TODO")
             case _:
-                #since speechbubble, skip calculating wrap
+                #since speechbubble, skip calculating wrap and colors
                 for x in range(bounding_box.lowX, bounding_box.highX):
                     for y in range(bounding_box.lowY, bounding_box.highY):
-                        if(low_text_col < data[x,y] < high_text_col):
-                            data[x, y] = background_color
+                        data[y, x] = background_color
 
-def replace_text(data, translated_text, bounding_box, orientation="None", font_filepath="arial.ttf", font_color=[0,0,0,255]):
-    draw = ImageDraw.Draw(data)
-    
-    position = (bounding_box.lowX, bounding_box.highY)
+def replace_text(img, translated_text, bounding_box, orientation="None", font_filepath="fonts/ShadowsIntoLight-Regular.ttf", font_color=[0,0,0]):
+    draw = ImageDraw.Draw(img)
 
-    font_size = 100
-    size = None
-    while (size is None or size[0] > bounding_box.height or size[1] > bounding_box.width and font_size > 0):
-        font = ImageFont.truetype("Tests/fonts/FreeMono.ttf", font_size)
-        size = draw.multiline_textbbox(position, translated_text, font)
-        font_size -= 1
+    position = (bounding_box.lowX, bounding_box.lowY)
+    max_font_size = 100
+    min_font_size = 10
+    spacing = 4
 
-    draw.multiline_text(position, translated_text, fill=font_color[:3], font=font)
+    font_size = max_font_size
+    while font_size >= min_font_size:
+        font = ImageFont.truetype(font_filepath, font_size)
+        words = translated_text.split()
+        lines = []
+        current_line = ""
+        w = 0
+        h = 0
+        total_height = 0
+
+        for word in words:
+            test_line = current_line + (" " if current_line else "") + word
+            ps = draw.textbbox(position, test_line, font=font)
+            w =  ps[2]-ps[0]
+            h = ps[3]-ps[1]
+            if w <= bounding_box.width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                    total_height += h + spacing
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+            total_height += h
+
+        # check if total height fits
+        if total_height <= bounding_box.height:
+            break
+        font_size -= 5
+
+    # center text vertically
+    text_y = max(bounding_box.lowY, bounding_box.lowY + (bounding_box.height - total_height) // 2) - font_size // 5 - 5 # vertical center
+
+    for line in lines:
+        ps = draw.textbbox(position, line, font=font)
+        w =  ps[2]-ps[0]
+        text_x = max(bounding_box.lowX, bounding_box.lowX + (bounding_box.width - w) // 2)  # horizontal center
+        draw.text((text_x, text_y), line, font=font, fill=tuple(font_color[:3]))
+        text_y += h + spacing
 
 
 # this is for when doing non speech bubble text
