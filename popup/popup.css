@@ -1,0 +1,91 @@
+body {
+  background:#656583;
+}
+
+/* Container */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 220px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #2b2b38;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Title */
+.toggle-title {
+  margin: 0;
+  font-size: 16px;
+  color: #e5e7eb;
+  font-weight: 500;
+}
+
+/* Switch */
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+}
+
+/* Hide checkbox */
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Track */
+.slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background:  #656583;
+  border-radius: 999px;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+
+/* Thumb */
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Checked state */
+.toggle-switch input:checked + .slider {
+  background: linear-gradient(135deg, #4f46e5, #3b82f6);
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.6);
+}
+
+/* Move thumb */
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* Subtle hover effect */
+.slider:hover::before {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+/* Optional glow when active */
+.toggle-switch input:checked + .slider::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.25);
+  filter: blur(8px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: -1;
+}
