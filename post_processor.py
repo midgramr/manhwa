@@ -89,6 +89,7 @@ def get_text_color(text_color, variance=50):
 
 def erase_text(data, bounding_box, type, text_color=[0,0,0], background_color=[255,255,255]):
         low_text_col, high_text_col = get_text_color(text_color)
+        rows, cols, _ = data.shape
 
         match type:
             case TextType.FREETEXT:
@@ -96,8 +97,8 @@ def erase_text(data, bounding_box, type, text_color=[0,0,0], background_color=[2
                 print("TODO")
             case _:
                 #since speechbubble, skip calculating wrap and colors
-                for x in range(bounding_box.lowX, bounding_box.highX):
-                    for y in range(bounding_box.lowY, bounding_box.highY):
+                for x in range(max(0, bounding_box.lowX), min(bounding_box.highX, cols)):
+                    for y in range(max(0, bounding_box.lowY), min(bounding_box.highY, rows)):
                         data[y, x] = background_color
 
 def replace_text(img, translated_text, bounding_box, orientation="None", font_filepath="fonts/ShadowsIntoLight-Regular.ttf", font_color=[0,0,0]):

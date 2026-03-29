@@ -3,7 +3,6 @@ from anthropic import Anthropic
 from pydantic import BaseModel
 from fastapi import FastAPI
 from base64 import b64decode, b64encode
-import uuid
 from io import BytesIO
 from PIL import Image
 from ultralytics import YOLO
@@ -108,9 +107,6 @@ async def translate(input: TranslationInput) -> TranslationOutput:
         original_img.size,
         processed_img
     )
-
-    # my_uuid = uuid.uuid4()
-    # save_img.save(f"{my_uuid}.jpg", format="JPEG")
 
     buffer = BytesIO()
     save_img.save(buffer, format="JPEG")
