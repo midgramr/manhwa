@@ -32,7 +32,23 @@ def generate_bounds(points):
 
     return BoundingBox(lowX, highX, lowY, highY)
 
-def post(img_bytes: bytes, metadata, type=TextType.SPEECHBUBBLE):
+def percent_inside(inner: BoundingBox, outer: BoundingBox) -> float: 
+    overlap_low_x = max(inner.lowX, outer.lowX)
+    overlap_high_x = min(inner.highX, outer.highX)
+    overlap_low_y = max(inner.lowY, outer.lowY)
+    overlap_high_y = min(inner.highY, outer.highY)
+
+    overlap_width = max(0, overlap_high_x - overlap_low_x)
+    overlap_height = max(0, overlap_high_y - overlap_low_y)
+    overlap_area = overlap_width * overlap_height
+
+    inner_area = inner.width * inner.height
+    if inner_area <= 0:
+        return 0.0
+
+    return overlap_area / inner_area
+
+def post(img_bytes: bytes, metadata, speech_boxes, type=TextType.SPEECHBUBBLE):
     image_stream = BytesIO(img_bytes)
 
     # open image in pillow
@@ -41,6 +57,16 @@ def post(img_bytes: bytes, metadata, type=TextType.SPEECHBUBBLE):
 
     for idx in range(0, len(metadata)):
         bounding_box = generate_bounds(metadata[idx][0])
+        match = False
+        for idx in range(0, len(speech_boxes)):
+            speech_box = generate_bounds(speech_boxes[idx])
+            match = percent_inside(bounding_box, speech_box) >= 0.95
+            if (match):
+                break
+
+        if not match:
+            continue
+
         text = metadata[idx][1]
 
         data = np.array(img)

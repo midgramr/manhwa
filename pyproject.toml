@@ -11,4 +11,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "requests>=2.33.0",
     "pillow>=12.1.1",
+    "ultralytics>=8.4.31",
+    "opencv-python-headless>=4.13.0.92",
+    "huggingface-hub>=1.8.0",
 ]
