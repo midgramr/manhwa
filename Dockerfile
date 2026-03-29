@@ -1,6 +1,16 @@
-FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddle:3.0.0
+FROM astral/uv:python3.12-trixie
 
-ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
+# I know this is bad practice lol
+ARG ANTHROPIC_API_KEY
+ENV ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+# Suppress annoying uv warnings when using a bind mount
+ENV UV_LINK_MODE=copy
 
 WORKDIR /app
-RUN python -m pip install paddleocr
+VOLUME /app/.venv
+COPY uv.lock .python-version pyproject.toml ./
+RUN uv sync --locked
+COPY . .
+
+EXPOSE 8000
+CMD ["uv", "run", "fastapi", "run", "main.py", "--port", "8000"]
