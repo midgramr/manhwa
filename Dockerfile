@@ -13,4 +13,4 @@ RUN uv sync --locked
 COPY . .
 
 EXPOSE 8000
-CMD ["uv", "run", "fastapi", "run", "main.py", "--port", "8000"]
+CMD ["uv", "run", "fastapi", "run", "--port", "8000"]
