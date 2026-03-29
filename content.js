@@ -1,5 +1,5 @@
 console.log("content.js loaded");
-window.toggle = true;
+window.toggle = false;
 
 const script = document.createElement("script");
 script.defer = true;
@@ -75,6 +75,7 @@ async function getReplacementUrl(originalSrc) {
 }
 
 async function replaceDocumentImage(img) {
+  if(window.toggle) return
   if (!img) return;
   if (img.getAttribute(DIRECT_IMG_REPLACED_ATTR) === "true") return;
 
@@ -117,7 +118,6 @@ if (document.readyState === "loading") {
 }
 
 const directImageObserver = new MutationObserver((mutations) => {
-  if(window.toggle) return
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       if (!(node instanceof Element)) continue;

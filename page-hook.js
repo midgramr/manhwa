@@ -1,6 +1,6 @@
 console.log("page-hook.js loaded");
 
-window.toggle = true;
+window.toggle = false;
 
 (() => {
   if(window.toggle) return;
