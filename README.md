@@ -21,5 +21,5 @@ Steps:
 2. Run Docker with a bind mount on the current directory:
 
     ```bash
-    docker run -it --rm -v .:/app -v /app/.venv astral/uv:python3.12-trixie bash
+    docker run -it -v .:/app -v /app/.venv astral/uv:python3.12-trixie bash
     ```

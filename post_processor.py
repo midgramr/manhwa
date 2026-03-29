@@ -1,6 +1,8 @@
 from PIL import Image, ImageFont, ImageDraw, ImageColor
 import numpy as np
 from enum import Enum
+import base64
+from io import BytesIO
 
 class TextType(Enum):
     SPEECHBUBBLE = 1
@@ -29,10 +31,18 @@ def generate_bounds(points):
     highY = np.max(y_coords)
 
     return BoundingBox(lowX, highX, lowY, highY)
-     
 
-def post(path_name, metadata, type=TextType.SPEECHBUBBLE, modified_name='modified.jpg'):
-    img = Image.open(path_name).convert("RGB")
+def post(base64_img, metadata, type=TextType.SPEECHBUBBLE, modified_name='modified.jpg'):
+    # If the string has a data URI prefix (e.g., "data:image/png;base64,"), remove it
+    if ',' in base64_img:
+        base64_img = base64_img.split(',')[1]
+        
+    decoded_bytes = base64.b64decode(base64_img)
+    image_stream = BytesIO(decoded_bytes)
+
+    # open image in pillow
+    #img = Image.open(path_name).convert("RGB")
+    img = Image.open(image_stream).convert("RGB")
 
     for idx in range(0, len(metadata)):
         bounding_box = generate_bounds(metadata[idx][0])
@@ -43,8 +53,9 @@ def post(path_name, metadata, type=TextType.SPEECHBUBBLE, modified_name='modifie
         img = Image.fromarray(data) # convert back to img for drawing new text
         replace_text(img, text, bounding_box)
             
-    img.save(modified_name)
-    return modified_name
+    # img.save(modified_name)
+    # return modified_name
+    return img.tobytes()
 
 def get_text_color(text_color, variance=50):
         low_text_col = np.copy(text_color)
@@ -74,7 +85,7 @@ def replace_text(img, translated_text, bounding_box, orientation="None", font_fi
     draw = ImageDraw.Draw(img)
 
     position = (bounding_box.lowX, bounding_box.lowY)
-    max_font_size = 100
+    max_font_size = 40
     min_font_size = 10
     spacing = 4
 
@@ -107,7 +118,7 @@ def replace_text(img, translated_text, bounding_box, orientation="None", font_fi
         # check if total height fits
         if total_height <= bounding_box.height:
             break
-        font_size -= 5
+        font_size -= 2
 
     # center text vertically
     text_y = max(bounding_box.lowY, bounding_box.lowY + (bounding_box.height - total_height) // 2) - font_size // 5 - 5 # vertical center
