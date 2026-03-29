@@ -10,4 +10,5 @@ dependencies = [
     "fastapi[standard]>=0.135.2",
     "pydantic>=2.12.5",
     "requests>=2.33.0",
+    "pillow>=12.1.1",
 ]

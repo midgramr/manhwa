@@ -1,2 +1,4 @@
 .venv
 .env.local
+modified.jpg
+__pycache__/*
