@@ -3,6 +3,9 @@ from anthropic import Anthropic
 from pydantic import BaseModel
 from fastapi import FastAPI
 from base64 import b64decode, b64encode
+import uuid
+from io import BytesIO
+from PIL import Image
 
 from post_processor import post
 
@@ -41,6 +44,7 @@ async def root():
 @app.post('/translate')
 async def translate(input: TranslationInput) -> TranslationOutput:
     img = b64decode(input.image)
+    original_img = Image.open(BytesIO(img)).convert("RGB")
 
     ocr_result = reader.readtext(img, paragraph=True)
     bubbles = [row[1] for row in ocr_result]
@@ -57,4 +61,17 @@ async def translate(input: TranslationInput) -> TranslationOutput:
     metadata = [it for it in zip(bounding_boxes, translation.parsed_output.translation)]
     processed_img = post(img, metadata)
 
-    return TranslationOutput(image=b64encode(processed_img))
+    save_img = Image.frombytes(
+        "RGB",
+        original_img.size,
+        processed_img
+    )
+
+    # my_uuid = uuid.uuid4()
+    # save_img.save(f"{my_uuid}.jpg", format="JPEG")
+
+    buffer = BytesIO()
+    save_img.save(buffer, format="JPEG")
+    encoded_image = b64encode(buffer.getvalue()).decode("utf-8")
+
+    return TranslationOutput(image=encoded_image)
