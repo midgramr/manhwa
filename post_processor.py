@@ -1,6 +1,8 @@
 from PIL import Image, ImageFont, ImageDraw, ImageColor
 import numpy as np
 from enum import Enum
+import base64
+from io import BytesIO
 
 class TextType(Enum):
     SPEECHBUBBLE = 1
@@ -30,9 +32,12 @@ def generate_bounds(points):
 
     return BoundingBox(lowX, highX, lowY, highY)
 
+def post(img_bytes: bytes, metadata, type=TextType.SPEECHBUBBLE):
+    image_stream = BytesIO(img_bytes)
 
-def post(path_name, metadata, type=TextType.SPEECHBUBBLE, modified_name='modified.jpg'):
-    img = Image.open(path_name).convert("RGB")
+    # open image in pillow
+    #img = Image.open().convert("RGB")
+    img = Image.open(image_stream).convert("RGB")
 
     for idx in range(0, len(metadata)):
         bounding_box = generate_bounds(metadata[idx][0])
@@ -43,38 +48,37 @@ def post(path_name, metadata, type=TextType.SPEECHBUBBLE, modified_name='modifie
         img = Image.fromarray(data) # convert back to img for drawing new text
         replace_text(img, text, bounding_box)
 
-    img.save(modified_name)
-    return modified_name
+    return img.tobytes()
 
 def get_text_color(text_color, variance=50):
-    low_text_col = np.copy(text_color)
-    low_text_col[:3] -= variance
-    low_text_col = np.clip(low_text_col, a_min=0, a_max=None)
+        low_text_col = np.copy(text_color)
+        low_text_col[:3] -= variance
+        low_text_col = np.clip(low_text_col, a_min=0, a_max=None)
 
-    high_text_col = np.copy(text_color)
-    high_text_col[:3] += variance
-    high_text_col = np.clip(high_text_col, a_min=None, a_max=255)
+        high_text_col = np.copy(text_color)
+        high_text_col[:3] += variance
+        high_text_col = np.clip(high_text_col, a_min=None, a_max=255)
 
-    return (low_text_col, high_text_col)
+        return (low_text_col, high_text_col)
 
 def erase_text(data, bounding_box, type, text_color=[0,0,0], background_color=[255,255,255]):
-    low_text_col, high_text_col = get_text_color(text_color)
+        low_text_col, high_text_col = get_text_color(text_color)
 
-    match type:
-        case TextType.FREETEXT:
-            #here do concave hull stuff
-            print("TODO")
-        case _:
-            #since speechbubble, skip calculating wrap and colors
-            for x in range(bounding_box.lowX, bounding_box.highX):
-                for y in range(bounding_box.lowY, bounding_box.highY):
-                    data[y, x] = background_color
+        match type:
+            case TextType.FREETEXT:
+                #here do concave hull stuff
+                print("TODO")
+            case _:
+                #since speechbubble, skip calculating wrap and colors
+                for x in range(bounding_box.lowX, bounding_box.highX):
+                    for y in range(bounding_box.lowY, bounding_box.highY):
+                        data[y, x] = background_color
 
 def replace_text(img, translated_text, bounding_box, orientation="None", font_filepath="fonts/ShadowsIntoLight-Regular.ttf", font_color=[0,0,0]):
     draw = ImageDraw.Draw(img)
 
     position = (bounding_box.lowX, bounding_box.lowY)
-    max_font_size = 100
+    max_font_size = 40
     min_font_size = 10
     spacing = 4
 
@@ -107,7 +111,7 @@ def replace_text(img, translated_text, bounding_box, orientation="None", font_fi
         # check if total height fits
         if total_height <= bounding_box.height:
             break
-        font_size -= 5
+        font_size -= 2
 
     # center text vertically
     text_y = max(bounding_box.lowY, bounding_box.lowY + (bounding_box.height - total_height) // 2) - font_size // 5 - 5 # vertical center

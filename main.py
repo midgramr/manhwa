@@ -2,17 +2,22 @@ import easyocr
 from anthropic import Anthropic
 from pydantic import BaseModel
 from fastapi import FastAPI
-import base64
+from base64 import b64decode, b64encode
 
-class Output(BaseModel):
+from post_processor import post
+
+class LlmOutput(BaseModel):
     translation: list[str]
 
-class Input(BaseModel):
+class TranslationInput(BaseModel):
+    image: str
+
+class TranslationOutput(BaseModel):
     image: str
 
 system='You are an expert manhwa translator with world-class skill in translating Korean to English. You have strict attention to detail: you understand idiomatic Korean language patterns and can output equivalently idiomatic English translations in-context.'
 
-input="""<input>
+prompt="""<input>
 {bubbles}
 </input>
 
@@ -34,8 +39,8 @@ async def root():
     return {'message': 'hello world'}
 
 @app.post('/translate')
-async def translate(input: Input) -> Output:
-    img = base64.b64decode(input.image)
+async def translate(input: TranslationInput) -> TranslationOutput:
+    img = b64decode(input.image)
 
     ocr_result = reader.readtext(img, paragraph=True)
     bubbles = [row[1] for row in ocr_result]
@@ -43,13 +48,13 @@ async def translate(input: Input) -> Output:
     translation = client.messages.parse(
         max_tokens=1024,
         system=system,
-        messages=[{'role': 'user', 'content': input.format(bubbles=bubbles)}],
+        messages=[{'role': 'user', 'content': prompt.format(bubbles=bubbles)}],
         model='claude-sonnet-4-6',
-        output_format=Output,
+        output_format=LlmOutput,
     )
 
     bounding_boxes = [row[0] for row in ocr_result]
     metadata = [it for it in zip(bounding_boxes, translation.parsed_output.translation)]
-    # TODO: process the image here
+    processed_img = post(img, metadata)
 
-    return translation.parsed_output
+    return TranslationOutput(image=b64encode(processed_img))
