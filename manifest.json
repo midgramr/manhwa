@@ -2,6 +2,9 @@
   "manifest_version": 2,
   "name": "Image Replacer",
   "version": "1.0",
+  "browser_action": {
+    "default_popup": "popup/popup.html"
+  },
   "permissions": [
     "<all_urls>",
     "http://127.0.0.1:8080/*"

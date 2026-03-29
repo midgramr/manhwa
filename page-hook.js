@@ -1,6 +1,9 @@
 console.log("page-hook.js loaded");
 
+window.toggle = true;
+
 (() => {
+  if(window.toggle) return;
   const originalCreateImageBitmap = window.createImageBitmap;
   const pendingRequests = new Map();
   const replacementCache = new Map();
@@ -37,6 +40,7 @@ console.log("page-hook.js loaded");
   }
 
   window.addEventListener("message", (event) => {
+    if(window.toggle) return;
     if (event.source !== window) return;
     if (!event.data || event.data.type !== "TOPTOON_RESPONSE_REPLACEMENT") return;
 

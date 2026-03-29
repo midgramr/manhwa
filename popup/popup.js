@@ -1,5 +1,8 @@
 const myInput = document.getElementById('onOffToggle');
 myInput.addEventListener('input', (event) => {
-  // put netowkr call here with event.target.value
-  console.log(event.target.value)
+  window.toggle = !window.toggle;
+  window.postMessage({
+  type: "TOGGLE_UPDATE",
+  toggle: window.toggle
+}, "*");
 });

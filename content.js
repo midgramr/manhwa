@@ -1,6 +1,8 @@
 console.log("content.js loaded");
+window.toggle = true;
 
 const script = document.createElement("script");
+script.defer = true;
 script.src = browser.runtime.getURL("page-hook.js");
 script.onload = () => {
   console.log("page-hook injected successfully");
@@ -13,6 +15,11 @@ script.onerror = (e) => {
 
 window.addEventListener("message", async (event) => {
   if (event.source !== window) return;
+  if (event.data?.type === "TOGGLE_UPDATE"){
+    window.toggle = !window.toggle
+    return;
+  }
+    if (window.toggle) return
   if (!event.data || event.data.type !== "TOPTOON_REQUEST_REPLACEMENT") return;
 
   try {
@@ -110,6 +117,7 @@ if (document.readyState === "loading") {
 }
 
 const directImageObserver = new MutationObserver((mutations) => {
+  if(window.toggle) return
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       if (!(node instanceof Element)) continue;
