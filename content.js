@@ -21,16 +21,109 @@ window.addEventListener("message", async (event) => {
       originalSrc: event.data.originalSrc
     });
 
-    window.postMessage({
-      type: "TOPTOON_RESPONSE_REPLACEMENT",
-      requestId: event.data.requestId,
-      replacementUrl
-    }, "*");
+    window.postMessage(
+      {
+        type: "TOPTOON_RESPONSE_REPLACEMENT",
+        requestId: event.data.requestId,
+        replacementUrl
+      },
+      "*"
+    );
   } catch (err) {
-    window.postMessage({
-      type: "TOPTOON_RESPONSE_REPLACEMENT",
-      requestId: event.data.requestId,
-      error: String(err)
-    }, "*");
+    window.postMessage(
+      {
+        type: "TOPTOON_RESPONSE_REPLACEMENT",
+        requestId: event.data.requestId,
+        error: String(err)
+      },
+      "*"
+    );
   }
+});
+
+const DIRECT_IMG_SELECTOR = "div.comic_img.c_img img.document_img";
+const DIRECT_IMG_REPLACED_ATTR = "data-toptoon-direct-replaced";
+const directReplacementCache = new Map();
+
+async function getReplacementUrl(originalSrc) {
+  if (!originalSrc) return null;
+
+  if (directReplacementCache.has(originalSrc)) {
+    return directReplacementCache.get(originalSrc);
+  }
+
+  const promise = browser.runtime.sendMessage({
+    type: "replace-image",
+    originalSrc
+  });
+
+  directReplacementCache.set(originalSrc, promise);
+
+  try {
+    return await promise;
+  } catch (err) {
+    directReplacementCache.delete(originalSrc);
+    throw err;
+  }
+}
+
+async function replaceDocumentImage(img) {
+  if (!img) return;
+  if (img.getAttribute(DIRECT_IMG_REPLACED_ATTR) === "true") return;
+
+  const originalSrc = img.currentSrc || img.src;
+  if (!originalSrc) return;
+
+  try {
+    const replacementUrl = await getReplacementUrl(originalSrc);
+
+    if (!replacementUrl) {
+      console.warn("No replacement image returned for:", originalSrc);
+      return;
+    }
+
+    // Replace only this DOM image element.
+    img.src = replacementUrl;
+    img.removeAttribute("srcset");
+    img.srcset = "";
+    img.setAttribute(DIRECT_IMG_REPLACED_ATTR, "true");
+
+    console.log("Directly replaced document_img:", originalSrc);
+  } catch (error) {
+    console.error("Failed to replace document_img:", error);
+  }
+}
+
+function scanAndReplaceDocumentImages(root = document) {
+  const images = root.querySelectorAll(DIRECT_IMG_SELECTOR);
+  for (const img of images) {
+    replaceDocumentImage(img);
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    scanAndReplaceDocumentImages();
+  });
+} else {
+  scanAndReplaceDocumentImages();
+}
+
+const directImageObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    for (const node of mutation.addedNodes) {
+      if (!(node instanceof Element)) continue;
+
+      if (node.matches?.(DIRECT_IMG_SELECTOR)) {
+        replaceDocumentImage(node);
+      }
+
+      scanAndReplaceDocumentImages(node);
+    }
+  }
+});
+
+directImageObserver.observe(document.documentElement, {
+  childList: true,
+  subtree: true
 });

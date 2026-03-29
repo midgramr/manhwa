@@ -1,8 +1,7 @@
 from flask import Flask, request, send_file
 from flask_cors import CORS
 import requests
-import os
-from urllib.parse import urlparse
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -22,19 +21,9 @@ def image():
     resp = requests.get(source, headers=headers, timeout=15)
     print(source)
     resp.raise_for_status()
-    
-    content_type = resp.headers.get("Content-Type", "")
 
-    ext = content_type.split("/")[-1].split(";")[0]
-    if ext == "jpeg":
-        ext = "jpg"
+    encodedImage = base64.b64encode(resp.content).decode("utf-8")
 
-    os.makedirs("downloads", exist_ok=True)
-    filename = f"downloads/image-{source}.{ext}"
-
-    with open(filename, "wb") as f:
-        f.write(resp.content)
-        
     return send_file(
         "image.jpg",
         mimetype=resp.headers.get("Content-Type", "image/jpeg")
